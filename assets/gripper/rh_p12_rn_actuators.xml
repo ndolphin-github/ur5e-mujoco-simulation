@@ -1,0 +1,24 @@
+<!-- RH-P12-RN Gripper Actuators -->
+<mujoco>
+  <actuator>
+    <!-- Main gripper control - synchronized left and right -->
+    <position name="gripper_actuator" joint="rh_p12_rn_right" ctrlrange="0 1.1" kp="100" kv="10" forcerange="-1000 1000"/>
+    
+    <!-- Individual finger controls (optional) -->
+    <position name="right_finger_actuator" joint="rh_p12_rn_right" ctrlrange="0 1.1" kp="100" kv="10" forcerange="-1000 1000"/>
+    <position name="left_finger_actuator" joint="rh_p12_rn_left" ctrlrange="0 1.1" kp="100" kv="10" forcerange="-1000 1000"/>
+    
+    <!-- Finger tip actuators -->
+    <position name="right_tip_actuator" joint="rh_r2" ctrlrange="0 1.0" kp="50" kv="5" forcerange="-1000 1000"/>
+    <position name="left_tip_actuator" joint="rh_l2" ctrlrange="0 1.0" kp="50" kv="5" forcerange="-1000 1000"/>
+  </actuator>
+  
+  <!-- Equality constraints for synchronized motion -->
+  <equality>
+    <!-- Synchronize left and right fingers -->
+    <joint joint1="rh_p12_rn_right" joint2="rh_p12_rn_left" polycoef="0 1 0 0 0"/>
+    <!-- Synchronize finger tips with main fingers -->
+    <joint joint1="rh_p12_rn_right" joint2="rh_r2" polycoef="0 0.8 0 0 0"/>
+    <joint joint1="rh_p12_rn_left" joint2="rh_l2" polycoef="0 0.8 0 0 0"/>
+  </equality>
+</mujoco>

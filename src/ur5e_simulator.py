@@ -317,9 +317,21 @@ class UR5eSimulator(object):
     
     def set_joint_positions(self, joint_positions):
         """
-            Set joint positions directly
+            Set joint positions directly (bypasses physics - use for initialization only)
         """
         self.forward(joint_positions)
+    
+    def set_joint_targets(self, joint_targets):
+        """
+            Set joint target positions using actuators (respects physics and collisions)
+        """
+        # Ensure we have the right number of control inputs
+        ctrl = np.zeros(self.n_actuators)
+        n_joints = min(len(joint_targets), self.n_actuators)
+        ctrl[:n_joints] = joint_targets[:n_joints]
+        
+        # Apply control and step simulation
+        self.step(ctrl=ctrl, nstep=1)
     
     def get_simulation_time(self):
         """
