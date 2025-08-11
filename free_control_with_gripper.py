@@ -73,10 +73,11 @@ def free_control_with_gripper():
         # Print controls
         print_controls()
         
-        # Initialize joint positions (6 UR5e joints + 4 gripper joints)
+        # Initialize joint positions (6 UR5e joints + 1 gripper control)
+        # Only one gripper value (current_joints[6]) controls all gripper joints
         current_joints = np.array([
             0.0, -1.5708, 0.0, -1.5708, 0.0, 0.0,  # UR5e ready position
-            0.0, 0.0, 0.0, 0.0                      # Gripper open position
+            0.0                                      # Gripper control (single value)
         ])
         # Set initial position directly (for initialization only)
         ur5e.set_joint_positions(current_joints)
@@ -90,11 +91,8 @@ def free_control_with_gripper():
             [-6.28, 6.28],   # Wrist 1
             [-6.28, 6.28],   # Wrist 2
             [-6.28, 6.28],   # Wrist 3
-            # RH-P12-RN Gripper limits
-            [0.0, 1.1],      # Right finger
-            [0.0, 1.1],      # Left finger
-            [0.0, 1.0],      # Right finger tip
-            [0.0, 1.0]       # Left finger tip
+            # RH-P12-RN Gripper (single actuator)
+            [0.0, 1.6]       # Gripper control
         ])
         
         # Control parameters
@@ -102,30 +100,30 @@ def free_control_with_gripper():
         gripper_speed = 0.02  # radians per step for gripper joints (reduced for smoother physics)
         update_counter = 0
         
-        # Predefined positions
+        # Predefined positions (7 elements: 6 arm + 1 gripper)
         home_position = np.array([
             -1.5708, -1.5708, 1.5708, -1.5708, -1.5708, 0,  # UR5e home
-            0.0, 0.0, 0.0, 0.0                               # Gripper open
+            0.0                                               # Gripper open
         ])
         ready_position = np.array([
             0.0, -1.5708, 0.0, -1.5708, 0.0, 0.0,           # UR5e ready
-            0.0, 0.0, 0.0, 0.0                               # Gripper open
+            0.0                                               # Gripper open
         ])
-        zero_position = np.zeros(10)  # All joints to zero
+        zero_position = np.zeros(7)  # All joints to zero
         
         # Pick and place positions
         pick_position = np.array([
             0.0, -1.0, 0.5, -2.0, 0.0, 0.0,                 # UR5e pick pose
-            0.0, 0.0, 0.0, 0.0                               # Gripper open
+            0.0                                               # Gripper open
         ])
         place_position = np.array([
             1.57, -1.2, 0.8, -1.8, 0.0, 0.0,                # UR5e place pose
-            1.0, 1.0, 0.8, 0.8                               # Gripper closed
+            1.6                                               # Gripper closed
         ])
         
-        # Gripper presets
-        gripper_open = np.array([0.0, 0.0, 0.0, 0.0])
-        gripper_closed = np.array([1.0, 1.0, 0.8, 0.8])
+        # Gripper presets (single value)
+        gripper_open = 0.0
+        gripper_closed = 1.6
         
         print("Free control active! Use keyboard controls...")
         print("Using PHYSICS-BASED CONTROL - collisions will be respected!")
@@ -191,39 +189,19 @@ def free_control_with_gripper():
                         current_joints[5] = np.clip(current_joints[5] - arm_speed, 
                                                    joint_limits[5,0], joint_limits[5,1])
                     
-                    # Gripper controls
-                    elif key == 'u':  # Right finger open
+                    # Gripper controls (single actuator)
+                    elif key == 'u' or key == 'i' or key == 'o' or key == 'p':  # Open gripper
                         current_joints[6] = np.clip(current_joints[6] + gripper_speed, 
                                                    joint_limits[6,0], joint_limits[6,1])
-                    elif key == 'j':  # Right finger close
+                    elif key == 'j' or key == 'k' or key == 'l' or key == ';':  # Close gripper
                         current_joints[6] = np.clip(current_joints[6] - gripper_speed, 
                                                    joint_limits[6,0], joint_limits[6,1])
-                    elif key == 'i':  # Left finger open
-                        current_joints[7] = np.clip(current_joints[7] + gripper_speed, 
-                                                   joint_limits[7,0], joint_limits[7,1])
-                    elif key == 'k':  # Left finger close
-                        current_joints[7] = np.clip(current_joints[7] - gripper_speed, 
-                                                   joint_limits[7,0], joint_limits[7,1])
-                    elif key == 'o':  # Right finger tip
-                        current_joints[8] = np.clip(current_joints[8] + gripper_speed, 
-                                                   joint_limits[8,0], joint_limits[8,1])
-                    elif key == 'l':
-                        current_joints[8] = np.clip(current_joints[8] - gripper_speed, 
-                                                   joint_limits[8,0], joint_limits[8,1])
-                    elif key == 'p':  # Left finger tip
-                        current_joints[9] = np.clip(current_joints[9] + gripper_speed, 
-                                                   joint_limits[9,0], joint_limits[9,1])
-                    elif key == ';':
-                        current_joints[9] = np.clip(current_joints[9] - gripper_speed, 
-                                                   joint_limits[9,0], joint_limits[9,1])
-                    
-                    # Gripper presets
-                    elif key == ' ':  # Space - Open gripper
-                        current_joints[6:10] = gripper_open
-                        print("Gripper OPENED")
-                    elif key == '\r':  # Enter - Close gripper
-                        current_joints[6:10] = gripper_closed
-                        print("Gripper CLOSED")
+                    elif key == ' ':  # Space - Open gripper (preset)
+                        current_joints[6] = gripper_open
+                        print("Gripper FULLY OPENED")
+                    elif key == '\r':  # Enter - Close gripper (preset)
+                        current_joints[6] = gripper_closed
+                        print("Gripper FULLY CLOSED")
                     
                     # Predefined positions
                     elif key == '1':
@@ -247,11 +225,11 @@ def free_control_with_gripper():
                     # Information commands
                     elif key == 'v':  # Changed from 'p' to avoid conflict
                         arm_joints = current_joints[:6]
-                        gripper_joints = current_joints[6:]
+                        gripper_value = current_joints[6]
                         print(f"ARM joints (deg): {np.rad2deg(arm_joints)}")
                         print(f"ARM joints (rad): {arm_joints}")
-                        print(f"GRIPPER joints (deg): {np.rad2deg(gripper_joints)}")
-                        print(f"GRIPPER joints (rad): {gripper_joints}")
+                        print(f"GRIPPER control (deg): {np.rad2deg(gripper_value):.1f}")
+                        print(f"GRIPPER control (rad): {gripper_value:.3f}")
                     elif key == 'b':  # Changed from 'i' to avoid conflict
                         ee_pos, ee_rot = ur5e.get_end_effector_pose()
                         if ee_pos is not None:
@@ -260,11 +238,10 @@ def free_control_with_gripper():
                         else:
                             print("Could not get end effector pose")
                     elif key == 'n':  # Gripper state
-                        gripper_joints = current_joints[6:]
-                        gripper_openness = 1.0 - np.mean(gripper_joints[:2] / 1.1)  # Main fingers
+                        gripper_value = current_joints[6]
+                        gripper_openness = 1.0 - (gripper_value / 1.6)  # Normalized gripper state
                         print(f"Gripper state: {gripper_openness*100:.1f}% open")
-                        print(f"Right finger: {gripper_joints[0]:.3f} rad ({np.rad2deg(gripper_joints[0]):.1f}°)")
-                        print(f"Left finger: {gripper_joints[1]:.3f} rad ({np.rad2deg(gripper_joints[1]):.1f}°)")
+                        print(f"Gripper control value: {gripper_value:.3f} rad ({np.rad2deg(gripper_value):.1f}°)")
                     elif key == 'c':
                         print_controls()
                     
@@ -282,8 +259,8 @@ def free_control_with_gripper():
                 # Print joint positions periodically
                 if key_pressed or (update_counter % 100 == 0):
                     arm_degrees = np.rad2deg(current_joints[:6])
-                    gripper_degrees = np.rad2deg(current_joints[6:])
-                    print(f"ARM: [{arm_degrees[0]:6.1f}, {arm_degrees[1]:6.1f}, {arm_degrees[2]:6.1f}, {arm_degrees[3]:6.1f}, {arm_degrees[4]:6.1f}, {arm_degrees[5]:6.1f}] | GRIP: [{gripper_degrees[0]:5.1f}, {gripper_degrees[1]:5.1f}, {gripper_degrees[2]:5.1f}, {gripper_degrees[3]:5.1f}]", end='\r')
+                    gripper_value = current_joints[6]
+                    print(f"ARM: [{arm_degrees[0]:6.1f}, {arm_degrees[1]:6.1f}, {arm_degrees[2]:6.1f}, {arm_degrees[3]:6.1f}, {arm_degrees[4]:6.1f}, {arm_degrees[5]:6.1f}] | GRIP: {gripper_value:5.2f}", end='\r')
                 
                 update_counter += 1
                 time.sleep(0.01)  # Small delay for smooth operation
